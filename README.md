@@ -1,59 +1,86 @@
-# App
+# a2ui-angular
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.26.
+Angular 19 SSR + [Genkit](https://genkit.dev/) 全栈聊天应用。模型后端使用 **OpenRouter 代理的 Claude**（OpenAI 兼容端点），改造自官方 `genkit-angular-starter-kit`。
 
-## Development server
+## ✨ 快速预览（无需任何 API Key）
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+如果你只想看看应用长什么样、体验完整的聊天交互，**不需要购买或配置任何大模型 API Key**，直接：
 
 ```bash
-ng generate component component-name
+npm install
+npm run mock
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+然后打开 `http://localhost:4200/`。
 
-```bash
-ng generate --help
+`npm run mock` 会以 **Mock 模式** 启动 —— 服务端用本地规则模拟回复（包括复刻 `getDateTime` 工具返回真实时间、带选项气泡的结构化回复、多轮会话），接口与返回结构和真实模式完全一致，所以前端 UI、加载动画、选项交互都能正常体验。Mock 模式下不会发起任何外部网络请求。
+
+试着问它：`你好`、`What time is it?`、`你能做什么？`、`讲个笑话`。
+
+## 🚀 使用真实的 Claude（需要 OpenRouter API Key）
+
+1. 复制环境变量模板并填写：
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   在 `.env` 中至少填入：
+
+   ```ini
+   OPENROUTER_API_KEY=sk-or-...        # 必填:你的 OpenRouter Key
+   OPENROUTER_MODEL=anthropic/claude-opus-4.8   # 可选,默认即此
+   # 若你所在区域被 OpenRouter 限制,可配置本机代理让 Node fetch 走代理出网:
+   # HTTPS_PROXY=http://127.0.0.1:7890
+   ```
+
+2. 启动开发服务器：
+
+   ```bash
+   npm start          # http://localhost:4200/
+   ```
+
+3. 或构建并以 SSR 生产模式运行：
+
+   ```bash
+   npm run build
+   npm run serve:ssr:app   # http://localhost:4000/
+   ```
+
+> **区域限制提示**：Node.js 内置 `fetch`（undici）默认不读 `HTTP_PROXY/HTTPS_PROXY` 环境变量。若你的出口 IP 被 OpenRouter 限制（返回 403 "This model is not available in your region"），在 `.env` 里配置 `HTTPS_PROXY` 指向你的本地代理即可——`src/flows.ts` 会用 undici 的 `ProxyAgent` 显式让请求走代理。
+
+## 📜 可用脚本
+
+| 命令 | 说明 |
+|------|------|
+| `npm run mock` | **Mock 模式** dev server（:4200）——无需 API Key，本地模拟回复 |
+| `npm run mock:ssr` | Mock 模式 SSR 生产服务（先 `npm run build`，:4000） |
+| `npm start` | 真实模式 dev server（:4200）——需 `.env` 中的 OpenRouter Key |
+| `npm run build` | 生产构建,产物在 `dist/app/` |
+| `npm run serve:ssr:app` | 真实模式 SSR 生产服务（:4000） |
+| `npm test` | 运行单元测试（Karma） |
+
+## 🏗️ 架构
+
+- **前端**：Angular 19，独立组件（standalone），Angular Material，聊天界面 `src/app/agent-chat/`。
+- **SSR**：`@angular/ssr` 的 `CommonEngine` + Express（`src/server.ts`）。
+- **后端 flow**：Genkit `chatFlow`（`src/flows.ts`），通过 `@genkit-ai/express` 的 `expressHandler` 暴露为 `POST /chatFlow`。
+- **Mock**：`src/flows.mock.ts` —— 与真实 `chatFlow` 同 schema、同返回结构的纯本地实现。`src/server.ts` 在首次请求时根据 `MOCK_LLM` 环境变量惰性选择加载真实或 Mock flow。
+- **模型**：`@genkit-ai/compat-oai` 接入 OpenRouter（OpenAI 兼容），模型由 `OPENROUTER_MODEL` 配置。
+
+### `/chatFlow` 接口
+
+请求：
+
+```json
+POST /chatFlow
+{ "data": { "userInput": "你好", "sessionId": "abc", "clearSession": true } }
 ```
 
-## Building
+响应：
 
-To build the project run:
-
-```bash
-ng build
+```json
+{ "result": { "agentResponse": "...", "options": ["...", "..."] } }
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+真实模式与 Mock 模式的请求/响应结构完全一致。

@@ -7,7 +7,7 @@
     "start": "tsx src/index.ts",
     "dev": "tsx --watch src/index.ts",
     "typecheck": "tsc --noEmit",
-    "genkit:ui": "genkit start -- npx tsx --watch src/index.ts"
+    "genkit:ui": "cross-env NO_PROXY=localhost,127.0.0.1 genkit start -- npx tsx --watch src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^25.9.1",
+    "cross-env": "^10.1.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"
   },

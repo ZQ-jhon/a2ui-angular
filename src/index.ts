@@ -104,4 +104,13 @@ async function main() {
     console.log(recipe);
 }
 
-main().catch(console.error);
+// 仅在非 genkit dev 模式下直接运行
+// genkit start 会通过 Reflection API 调用 flow，不需要 main()
+const isGenkitDev = process.env.GENKIT_ENV === 'dev';
+
+if (!isGenkitDev) {
+    main().catch(console.error);
+} else {
+    // genkit start 模式下，保持进程运行，等待 Reflection API 调用
+    console.log('[genkit] Dev mode — awaiting flow invocations via Reflection API...');
+}

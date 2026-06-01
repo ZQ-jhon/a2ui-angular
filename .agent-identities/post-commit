@@ -1,0 +1,16 @@
+#!/bin/bash
+# Git post-commit hook - 显示本次提交的 Agent 身份
+# 安装: 复制到 .git/hooks/post-commit 或运行 setup.ps1
+
+AUTHOR=$(git log -1 --format='%an <%ae>')
+COMMITTER=$(git log -1 --format='%cn <%ce>')
+
+echo ""
+echo "📝 提交完成！"
+echo "   Author:    $AUTHOR"
+echo "   Committer: $COMMITTER"
+
+if [ "$AUTHOR" != "$COMMITTER" ]; then
+    echo "   🤖 本次提交由 Agent 执行"
+fi
+echo ""

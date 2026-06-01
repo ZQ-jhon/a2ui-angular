@@ -1,0 +1,17 @@
+#!/bin/bash
+# Git prepare-commit-msg hook - 自动在提交信息中标注 Agent
+# 如果检测到 GIT_COMMITTER_NAME 环境变量为 Agent 名，自动追加 Agent: 标记
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+# 只在普通提交时追加（不是 merge、squash、amend 等）
+if [ -z "$COMMIT_SOURCE" ] || [ "$COMMIT_SOURCE" = "message" ]; then
+    if [ -n "$GIT_COMMITTER_NAME" ] && [ "$GIT_COMMITTER_NAME" != "tychozhang" ]; then
+        # 检查是否已经包含 Agent: 标记
+        if ! grep -q "^Agent:" "$COMMIT_MSG_FILE"; then
+            echo "" >> "$COMMIT_MSG_FILE"
+            echo "Agent: $GIT_COMMITTER_NAME" >> "$COMMIT_MSG_FILE"
+        fi
+    fi
+fi

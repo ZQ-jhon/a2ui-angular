@@ -11,11 +11,13 @@ npm install
 npm run mock
 ```
 
-然后打开 `http://localhost:4200/`。
+然后打开 `http://localhost:4000/`。
 
-`npm run mock` 会以 **Mock 模式** 启动 —— 服务端用本地规则模拟回复（包括复刻 `getDateTime` 工具返回真实时间、带选项气泡的结构化回复、多轮会话），接口与返回结构和真实模式完全一致，所以前端 UI、加载动画、选项交互都能正常体验。Mock 模式下不会发起任何外部网络请求。
+`npm run mock` 会先 `ng build`，再以 **Mock 模式** 启动完整的 SSR/Express 服务（含 `POST /chatFlow` 端点）—— 服务端用本地规则模拟回复（包括复刻 `getDateTime` 工具返回真实时间、带选项气泡的结构化回复、多轮会话、注册/登录等热点表单模板），接口与返回结构和真实模式完全一致，所以前端 UI、加载动画、选项交互都能正常体验。Mock 模式下不会发起任何外部网络请求。
 
-试着问它：`你好`、`What time is it?`、`你能做什么？`、`讲个笑话`。
+> 注：聊天接口 `/chatFlow` 由 `src/server.ts` 的 Express 暴露，必须跑 SSR 服务才能用；纯 `ng serve` dev server 不挂载该端点。如需 dev server 的热重载体验，可用 `npm run mock:dev`，但 `/chatFlow` 在其下不可用（仅供前端调试）。
+
+试着问它：`你好`、`What time is it?`、`你能做什么？`、`讲个笑话`、`我要注册`。
 
 ## 🚀 使用真实的 Claude（需要 OpenRouter API Key）
 
@@ -53,8 +55,9 @@ npm run mock
 
 | 命令 | 说明 |
 |------|------|
-| `npm run mock` | **Mock 模式** dev server（:4200）——无需 API Key，本地模拟回复 |
-| `npm run mock:ssr` | Mock 模式 SSR 生产服务（先 `npm run build`，:4000） |
+| `npm run mock` | **Mock 模式**（先 `ng build` 再跑 SSR，:4000）——无需 API Key，本地模拟回复，`/chatFlow` 可用 |
+| `npm run mock:ssr` | 同 `npm run mock` 但不重新构建（需先 `npm run build`，:4000） |
+| `npm run mock:dev` | Mock 模式 dev server（:4200，热重载）——仅前端调试，`/chatFlow` 不可用 |
 | `npm start` | 真实模式 dev server（:4200）——需 `.env` 中的 OpenRouter Key |
 | `npm run build` | 生产构建,产物在 `dist/app/` |
 | `npm run serve:ssr:app` | 真实模式 SSR 生产服务（:4000） |

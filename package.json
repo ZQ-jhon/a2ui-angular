@@ -6,7 +6,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "mock": "cross-env MOCK_LLM=1 ng serve",
+    "mock": "ng build && cross-env MOCK_LLM=1 node dist/app/server/server.mjs",
+    "mock:dev": "cross-env MOCK_LLM=1 ng serve",
     "mock:ssr": "cross-env MOCK_LLM=1 node dist/app/server/server.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
@@ -33,6 +34,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
     "genkit": "^1.36.0",
+    "ioredis": "^5.11.0",
     "partial-json": "^0.1.7",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

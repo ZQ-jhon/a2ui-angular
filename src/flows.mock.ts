@@ -15,6 +15,8 @@
  */
 import { genkit } from 'genkit/beta';
 import { z } from 'zod';
+import { matchTemplate } from './templates';
+import { normalizeInput } from './cache';
 
 console.log('[genkit] ⚠️  MOCK 模式已启用 —— 使用本地模拟回复,未连接任何大模型。');
 console.log('[genkit]     如需体验真实 Claude,请配置 OPENROUTER_API_KEY 后用 `npm start`。');
@@ -125,6 +127,13 @@ export const chatFlow = ai.defineFlow(
   async ({ userInput, sessionId, clearSession }) => {
     if (userInput.length === 0) {
       userInput = 'Hi';
+    }
+
+    // 模板热点(注册/登录等)—— 与真实模式一致,优先匹配,跳过"模型"。
+    const tpl = matchTemplate(normalizeInput(userInput));
+    if (tpl) {
+      console.log(`[cache] (mock) 模板命中: ${tpl.templateId}`);
+      return { agentResponse: tpl.agentResponse, options: tpl.options };
     }
 
     if (clearSession || !mockSessions.has(sessionId)) {

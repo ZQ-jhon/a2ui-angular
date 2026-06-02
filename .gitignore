@@ -1,6 +1,9 @@
 node_modules/
 dist/
 build/
+# Angular
+.angular/
+/tmp-scaffold/
 .env
 .genkit/
 .DS_Store
@@ -36,3 +39,4 @@ Desktop.ini
 # Optional: Ignore specific files based on patterns
 # Optional: Ignore specific files based on extensions
 # Optional: Ignore specific files based on names
+src/_legacy-recipe.ts.bak

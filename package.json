@@ -14,7 +14,7 @@
     "test": "ng test",
     "serve:ssr:app": "node dist/app/server/server.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "start:with-genkit-ui": "cross-env NO_PROXY=localhost,127.0.0.1 genkit start -- ng serve"
+    "start:with-genkit-ui": "ng build && cross-env NO_PROXY=localhost,127.0.0.1 genkit start -- node dist/app/server/server.mjs"
   },
   "private": true,
   "dependencies": {

@@ -20,16 +20,10 @@ import { matchTemplate } from './templates';
 import { normalizeInput, cacheKey, getCacheStore } from './cache';
 
 // ── 代理 fetch ──────────────────────────────────────────────────────────────
-const proxyUrl =
-  process.env['HTTPS_PROXY'] ||
-  process.env['https_proxy'] ||
-  process.env['HTTP_PROXY'] ||
-  process.env['http_proxy'];
-
-const proxyFetch: any = proxyUrl
-  ? (input: any, init?: any) =>
-      fetch(input, { ...init, dispatcher: new ProxyAgent(proxyUrl) } as any)
-  : fetch;
+// 不再传自定义 dispatcher —— 由 server.ts 在启动时 setGlobalDispatcher 统一处理。
+// 如果传了 dispatcher 会覆盖全局的,而 bundle 里的 undici 和运行时 undici 
+// 的私有 Symbol 对不上,导致 ProxyAgent 失灵 → 403。
+const proxyFetch: any = fetch;
 
 // ── 模型 ────────────────────────────────────────────────────────────────────
 const modelName = process.env['OPENROUTER_MODEL'] || 'anthropic/claude-opus-4.8';

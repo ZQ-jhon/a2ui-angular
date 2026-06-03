@@ -19,13 +19,16 @@
           "options": {
             "outputPath": "dist/app",
             "allowedCommonJsDependencies": [
-              "uri-templates",
-              "@opentelemetry/sdk-node",
-              "dotprompt",
-              "agentkeepalive",
-              "whatwg-url",
-              "encoding"
-            ],
+                          "uri-templates",
+                          "@opentelemetry/sdk-node",
+                          "dotprompt",
+                          "agentkeepalive",
+                          "whatwg-url",
+                          "encoding"
+                        ],
+                        "externalDependencies": [
+                          "undici"
+                        ],
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -114,5 +117,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "09b35fd4-5ff7-4422-9a98-adb42c0da5ae"
   }
 }

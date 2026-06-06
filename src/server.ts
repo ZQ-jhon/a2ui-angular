@@ -6,29 +6,6 @@ import { fileURLToPath } from 'node:url';
 import { expressHandler } from '@genkit-ai/express';
 import bootstrap from './main.server';
 
-// ── 全局代理: 让 Node.js 内置 fetch(undici) 走 Clash ─────────────────────────
-// SSR bundle 里的 undici 私有 Symbol 和运行时 undici 对不上,
-// 所以不能用 bundle 的 ProxyAgent 当 dispatcher 传给 fetch。
-// 替代方案: 在进程启动时 setGlobalDispatcher,所有 fetch 自动走代理。
-const proxyUrl =
-  process.env['HTTPS_PROXY'] ||
-  process.env['https_proxy'] ||
-  process.env['HTTP_PROXY'] ||
-  process.env['http_proxy'];
-if (proxyUrl) {
-  import('undici').then(({ ProxyAgent, setGlobalDispatcher }) => {
-    setGlobalDispatcher(
-      new ProxyAgent({
-        uri: proxyUrl,
-        connectTimeout: 60_000,
-        headersTimeout: 120_000,
-        bodyTimeout: 120_000,
-      })
-    );
-    console.log(`[server] 全局代理已启用: ${proxyUrl}`);
-  });
-}
-
 // chatFlow handler —— 用惰性动态 import(首次请求时)加载,
 // 以避免 server bundle 的顶层 await 限制。
 let chatHandler: ((req: any, res: any, next: any) => void) | undefined;
@@ -46,7 +23,9 @@ const browserDistFolder = resolve(serverDistFolder, '../browser');
 const indexHtml = join(serverDistFolder, 'index.server.html');
 
 const app = express();
-const commonEngine = new CommonEngine();
+const commonEngine = new CommonEngine({
+  allowedHosts: ['localhost', '127.0.0.1', '[::1]'],
+});
 
 // 解析 JSON 请求体(Genkit flow 端点需要)
 app.use(express.json());
@@ -99,7 +78,7 @@ app.get('**', (req, res, next) => {
  * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
  */
 if (isMainModule(import.meta.url)) {
-  const port = process.env['PORT'] || 4000;
+  const port = process.env['PORT'] || 8540;
   app.listen(port, () => {
     console.log(`Node Express server listening on http://localhost:${port}`);
   });

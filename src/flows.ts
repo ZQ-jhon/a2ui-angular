@@ -13,15 +13,41 @@
 import 'dotenv/config';
 import { Chat, genkit, Session } from 'genkit/beta';
 import { openAICompatible, compatOaiModelRef } from '@genkit-ai/compat-oai';
-import { ProxyAgent } from 'undici';
+import { fetch as undiciFetch, ProxyAgent } from 'undici';
 import { parse } from 'partial-json';
 import { z } from 'zod';
 
 // ── 代理 fetch ──────────────────────────────────────────────────────────────
-// 不再传自定义 dispatcher —— 由 server.ts 在启动时 setGlobalDispatcher 统一处理。
-// 如果传了 dispatcher 会覆盖全局的,而 bundle 里的 undici 和运行时 undici
-// 的私有 Symbol 对不上,导致 ProxyAgent 失灵 → 403。
-const proxyFetch: any = fetch;
+// Only OpenRouter requests should use the proxy. Genkit Developer UI posts
+// traces to localhost, so setting a global dispatcher would break trace saving.
+const proxyUrl =
+  process.env['HTTPS_PROXY'] ||
+  process.env['https_proxy'] ||
+  process.env['HTTP_PROXY'] ||
+  process.env['http_proxy'];
+const proxyAgent = proxyUrl
+  ? new ProxyAgent({
+      uri: proxyUrl,
+      connectTimeout: 60_000,
+      headersTimeout: 120_000,
+      bodyTimeout: 120_000,
+    })
+  : undefined;
+
+if (proxyUrl) {
+  console.log(`[genkit] OpenRouter proxy enabled: ${proxyUrl}`);
+}
+
+const proxyFetch: any = (input: any, init?: any) => {
+  if (!proxyAgent) {
+    return fetch(input, init);
+  }
+
+  return undiciFetch(input, {
+    ...init,
+    dispatcher: proxyAgent,
+  } as any);
+};
 
 // ── 模型 ────────────────────────────────────────────────────────────────────
 const modelName = process.env['OPENROUTER_MODEL'] || 'anthropic/claude-opus-4.8';

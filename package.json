@@ -31,7 +31,6 @@
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
     "genkit": "^1.36.0",
-    "ioredis": "^5.11.0",
     "partial-json": "^0.1.7",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",

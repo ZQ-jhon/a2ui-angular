@@ -16,12 +16,10 @@ import { openAICompatible, compatOaiModelRef } from '@genkit-ai/compat-oai';
 import { ProxyAgent } from 'undici';
 import { parse } from 'partial-json';
 import { z } from 'zod';
-import { matchTemplate } from './templates';
-import { normalizeInput, cacheKey, getCacheStore } from './cache';
 
 // ── 代理 fetch ──────────────────────────────────────────────────────────────
 // 不再传自定义 dispatcher —— 由 server.ts 在启动时 setGlobalDispatcher 统一处理。
-// 如果传了 dispatcher 会覆盖全局的,而 bundle 里的 undici 和运行时 undici 
+// 如果传了 dispatcher 会覆盖全局的,而 bundle 里的 undici 和运行时 undici
 // 的私有 Symbol 对不上,导致 ProxyAgent 失灵 → 403。
 const proxyFetch: any = fetch;
 
@@ -92,31 +90,6 @@ export const chatFlow = ai.defineFlow(
       userInput = 'Hi';
     }
 
-    const normalized = normalizeInput(userInput);
-
-    // ① 模板热点(注册/登录等)—— 与会话历史无关,无条件优先匹配。
-    //    命中即 0 调模型、确定性返回,跨用户复用,且不含任何 PII。
-    const tpl = matchTemplate(normalized);
-    if (tpl) {
-      console.log(`[cache] 模板命中: ${tpl.templateId}(跳过模型调用)`);
-      return { agentResponse: tpl.agentResponse, options: tpl.options };
-    }
-
-    // ② 通用响应缓存 —— 仅对"单轮/无上下文依赖"的请求启用(clearSession=true),
-    //    多轮对话依赖历史,缓存会串话,故跳过。key = 归一化输入 + 模型 + 版本 的 hash。
-    const cacheable = clearSession === true;
-    const key = cacheKey({ input: userInput, model: modelName, scope: 'chat' });
-    const store = await getCacheStore();
-
-    if (cacheable) {
-      const cached = await store.get(key);
-      if (cached) {
-        console.log(`[cache] 命中(${store.backend}): ${key}`);
-        return JSON.parse(cached);
-      }
-    }
-
-    // ③ 未命中 —— 调用真实模型。
     let chat: Chat;
     if (clearSession || !session) {
       session = ai.createSession({ sessionId });
@@ -150,16 +123,6 @@ export const chatFlow = ai.defineFlow(
 
     const { text } = await chat.send({ prompt });
     const result = parse(maybeStripMarkdown(text));
-
-    // 回写缓存(仅单轮)。TTL 1 小时,可按需调整。
-    if (cacheable) {
-      try {
-        await store.set(key, JSON.stringify(result), 3600);
-        console.log(`[cache] 已写入(${store.backend}): ${key}`);
-      } catch (err) {
-        console.warn('[cache] 写入失败(忽略):', (err as Error).message);
-      }
-    }
 
     return result;
   }

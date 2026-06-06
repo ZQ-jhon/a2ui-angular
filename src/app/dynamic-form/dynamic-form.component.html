@@ -1,0 +1,62 @@
+<form class="dynamic-form" [class.submitted]="submitted()" (ngSubmit)="onSubmit()">
+  <h4 class="form-title">{{ form().title }}</h4>
+
+  <fieldset [disabled]="submitted()">
+  @for (field of form().fields; track field.name) {
+    <div class="field">
+      <label [for]="field.name">
+        {{ field.label }}
+        @if (field.required) { <span class="required">*</span> }
+      </label>
+
+      @switch (field.type) {
+        @case ('textarea') {
+          <textarea
+            [id]="field.name"
+            [placeholder]="field.placeholder || ''"
+            (input)="setValue(field.name, $any($event.target).value)"
+          ></textarea>
+        }
+        @case ('number') {
+          <input
+            type="number"
+            [id]="field.name"
+            [placeholder]="field.placeholder || ''"
+            (input)="setValue(field.name, $any($event.target).value)"
+          />
+        }
+        @case ('select') {
+          <select
+            [id]="field.name"
+            (change)="setValue(field.name, $any($event.target).value)"
+          >
+            <option value="" disabled selected>请选择…</option>
+            @for (opt of field.options || []; track opt) {
+              <option [value]="opt">{{ opt }}</option>
+            }
+          </select>
+        }
+        @case ('checkbox') {
+          <input
+            type="checkbox"
+            [id]="field.name"
+            (change)="setValue(field.name, $any($event.target).checked)"
+          />
+        }
+        @default {
+          <input
+            type="text"
+            [id]="field.name"
+            [placeholder]="field.placeholder || ''"
+            (input)="setValue(field.name, $any($event.target).value)"
+          />
+        }
+      }
+    </div>
+  }
+  </fieldset>
+
+  <button type="submit" [disabled]="missingRequired() || submitting() || submitted()">
+    {{ submitted() ? '已提交' : (form().submitLabel || '提交') }}
+  </button>
+</form>

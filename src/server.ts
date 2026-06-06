@@ -9,6 +9,7 @@ import bootstrap from './main.server';
 // chatFlow handler —— 用惰性动态 import(首次请求时)加载,
 // 以避免 server bundle 的顶层 await 限制。
 let chatHandler: ((req: any, res: any, next: any) => void) | undefined;
+let submitHandler: ((req: any, res: any, next: any) => void) | undefined;
 
 async function getChatHandler() {
   if (!chatHandler) {
@@ -16,6 +17,14 @@ async function getChatHandler() {
     chatHandler = expressHandler(mod.chatFlow as any);
   }
   return chatHandler;
+}
+
+async function getSubmitHandler() {
+  if (!submitHandler) {
+    const mod = await import('./flows');
+    submitHandler = expressHandler(mod.submitFlow as any);
+  }
+  return submitHandler;
 }
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
@@ -45,7 +54,19 @@ app.post('/chatFlow', async (req, res, next) => {
 });
 
 /**
- * Serve static files from /browser
+ * 表单提交端点 —— 前端通过 runFlow({ url: '/submitForm' }) 调用。
+ */
+app.post('/submitForm', async (req, res, next) => {
+  try {
+    const handler = await getSubmitHandler();
+    handler(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * 提供 /browser 下的静态资源文件。
  */
 app.get(
   '**',
@@ -56,7 +77,7 @@ app.get(
 );
 
 /**
- * Handle all other requests by rendering the Angular application.
+ * 其余所有请求交给 Angular 做服务端渲染(SSR)。
  */
 app.get('**', (req, res, next) => {
   const { protocol, originalUrl, baseUrl, headers } = req;
@@ -74,8 +95,8 @@ app.get('**', (req, res, next) => {
 });
 
 /**
- * Start the server if this module is the main entry point.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ * 当本模块作为主入口运行时启动服务器。
+ * 监听端口由环境变量 `PORT` 指定,未设置时默认 8540。
  */
 if (isMainModule(import.meta.url)) {
   const port = process.env['PORT'] || 8540;

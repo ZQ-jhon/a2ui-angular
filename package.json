@@ -6,9 +6,6 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "mock": "ng build && cross-env MOCK_LLM=1 node dist/app/server/server.mjs",
-    "mock:dev": "cross-env MOCK_LLM=1 ng serve",
-    "mock:ssr": "cross-env MOCK_LLM=1 node dist/app/server/server.mjs",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
